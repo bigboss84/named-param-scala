@@ -6,16 +6,16 @@ package it.russoft.namedparam
   */
 object Implicits {
 
-  implicit class NamedParam(s: String) {
+  type Converter = List[(Class[_], NamedParamConverter[Any])]
+
+  implicit class NamedParam(s: String)
+                           (implicit converters: Converter = Nil) {
 
     /**
       * Replaces all named parameters into this string with
       * corresponding values in `param`.
       *
-      * @example {{{
-      * "select * from a where id = :id" << Map("id" -> 22)
-      * }}}
-      *
+      * @example {{{"select * from a where id = :id" << Map("id" -> 22)}}}
       * @param param Mapping for parameter names where the keys
       *              are the parameter names.
       * @return Returns new string with the replaced names with
@@ -24,7 +24,14 @@ object Implicits {
     def <<(param: Map[String, Any]): String = {
       def replace(s: String, m: Map[String, Any]): String = {
         if (m.isEmpty) s
-        else replace(s.replaceAll(s":${m.head._1}", expand(m.head._2)), m.tail)
+        else {
+          val v = m.head._2
+          val e = expand {
+            if (v == null) v // null value will be handled in conversion
+            else converters.find(_._1 == v.getClass).map(_._2.convert(v)).getOrElse(v)
+          }
+          replace(s.replaceAll(s":${m.head._1}", e), m.tail)
+        }
       }
 
       replace(s, param)
@@ -35,10 +42,9 @@ object Implicits {
       * corresponding values in `p` fields.
       *
       * @example {{{
-      * case class A(id: Int)
-      * "select * from a where id = :id" << A(22)
+      *   case class A(id: Int)
+      *   "select * from a where id = :id" << A(22)
       * }}}
-      *
       * @param p An instance of [[Product]] whose fields names
       *          are intended as parameter names.
       * @return Returns new string with the replaced names with
@@ -51,9 +57,9 @@ object Implicits {
     }
 
     private def expand(a: Any): String = a match {
-      // boxed-values
+      // boxed values
       case s: Some[_] => expand(s.get)
-      // null-values
+      // null values
       case None | null => "null"
       // unquoted
       case _: Byte | _: Short | _: Int | _: Long | _: Float | _: Double | _: Boolean => a.toString

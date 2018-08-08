@@ -1,5 +1,10 @@
 package it.russoft.namedparam
 
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.ZoneOffset.UTC
+import java.util.Date
+
 import it.russoft.namedparam.Implicits._
 import org.scalatest._
 
@@ -157,5 +162,28 @@ class ImplicitsTest extends FlatSpec with Matchers {
     }
     case class Model(int: Int = 7, char: Char = 'e', any: Foo = new Foo)
     ":int :char :any" <<< new Model shouldBe "7 'e' 'foo'"
+  }
+
+  /*
+   * Expansion from Map (custom conversions)
+   */
+
+  implicit val converters: Converter =
+    classOf[Date] -> new NamedParamConverter[Date](x => new SimpleDateFormat("yyyy-MM-dd").format(x)) :: Nil
+
+  // test date
+  private val date1984 = Date.from(LocalDateTime.of(1984, 12, 31, 1, 10).toInstant(UTC))
+
+  "custom conversion value" should "be converted as expected" in {
+    ":date" << Map("date" -> date1984) shouldBe "'1984-12-31'"
+  }
+
+  /*
+   * Expansion from Product
+   */
+
+  "custom conversion value in product" should "be converted as expected" in {
+    case class Model(date: Date = date1984)
+    ":date" <<< new Model shouldBe "'1984-12-31'"
   }
 }
