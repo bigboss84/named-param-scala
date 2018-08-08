@@ -178,12 +178,21 @@ class ImplicitsTest extends FlatSpec with Matchers {
     ":date" << Map("date" -> date1984) shouldBe "'1984-12-31'"
   }
 
+  "custom option conversion value" should "be converted as expected" in {
+    ":date" << Map("date" -> Some(date1984)) shouldBe "'1984-12-31'"
+  }
+
   /*
    * Expansion from Product
    */
 
   "custom conversion value in product" should "be converted as expected" in {
     case class Model(date: Date = date1984)
+    ":date" <<< new Model shouldBe "'1984-12-31'"
+  }
+
+  "custom option conversion value in product" should "be converted as expected" in {
+    case class Model(date: Option[Date] = Some(date1984))
     ":date" <<< new Model shouldBe "'1984-12-31'"
   }
 }

@@ -1,6 +1,6 @@
 name := "named-param-scala"
 
-version := "1.1"
+version := "1.1.1"
 
 scalaVersion := "2.12.4"
 

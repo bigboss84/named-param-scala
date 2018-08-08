@@ -25,11 +25,7 @@ object Implicits {
       def replace(s: String, m: Map[String, Any]): String = {
         if (m.isEmpty) s
         else {
-          val v = m.head._2
-          val e = expand {
-            if (v == null) v // null value will be handled in conversion
-            else converters.find(_._1 == v.getClass).map(_._2.convert(v)).getOrElse(v)
-          }
+          val e = expand { convert(m.head._2) }
           replace(s.replaceAll(s":${m.head._1}", e), m.tail)
         }
       }
@@ -56,9 +52,14 @@ object Implicits {
         .filterNot(_.isSynthetic).map(_.getName -> values.next).toMap
     }
 
+    private def convert(a: Any): Any = a match {
+      case null => null
+      case _ => converters.find(_._1 == a.getClass).map(_._2.convert(a)).getOrElse(a)
+    }
+
     private def expand(a: Any): String = a match {
       // boxed values
-      case s: Some[_] => expand(s.get)
+      case s: Some[_] => expand { convert(s.get) }
       // null values
       case None | null => "null"
       // unquoted
