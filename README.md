@@ -63,7 +63,7 @@ WHERE
 ## Strings and objects
 `Char`, `String` and `Any` objects will be single-quoted calling `toString` method.
 
-For example following statement
+For example following statement:
 
 ```
 SELECT
@@ -136,5 +136,14 @@ import it.russoft.namedparam.Implicits._
 implicit val converters: Converter =
     classOf[Date] -> new NamedParamConverter[Date](x => new SimpleDateFormat("yyyy-MM-dd").format(x)) :: Nil
 
-"SELECT * FROM tree WHERE registeredAt = :registeredAt" << Map("registeredAt", new Date())
+"SELECT * FROM tree WHERE registered_at = :registeredAt" << Map("registeredAt", new Date())
 ```
+
+that will translates as follows:
+
+```
+SELECT * FROM tree WHERE registered_at = '2018-09-18'
+```
+\
+Thank you for reading,  
+Enjoy yourself :)
